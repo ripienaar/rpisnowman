@@ -109,11 +109,13 @@ func main() {
 	schemes := []func(){upScheme, crossScheme, linesScheme, allScheme, downScheme, simpleScheme}
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 
+	allOff()
+
 	for {
 		for _, i := range r.Perm(len(schemes)) {
-			allOff()
 			if !paused {
 				schemes[i]()
+				allOff()
 			}
 			sleep()
 		}
