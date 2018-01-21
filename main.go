@@ -10,8 +10,10 @@ import (
 )
 
 var (
-	leds = [9]rpio.Pin{}
-	pins = []int{7, 8, 9, 17, 18, 22, 23, 24, 25}
+	leds   = [9]rpio.Pin{}
+	pins   = []int{7, 8, 9, 17, 18, 22, 23, 24, 25}
+	paused = false
+	err    error
 )
 
 func sleep() {
@@ -95,6 +97,10 @@ func main() {
 
 	defer rpio.Close()
 
+	if enableChoria {
+		go runChoria()
+	}
+
 	for i, pin := range pins {
 		leds[i] = rpio.Pin(pin)
 		leds[i].Output()
@@ -106,7 +112,9 @@ func main() {
 	for {
 		for _, i := range r.Perm(len(schemes)) {
 			allOff()
-			schemes[i]()
+			if !paused {
+				schemes[i]()
+			}
 			sleep()
 		}
 	}

@@ -1,0 +1,14 @@
+package: github.com/ripienaar/snowman
+import:
+- package: github.com/stianeikeland/go-rpio
+  version: ^4.0.0
+- package: github.com/choria-io/go-choria
+  version: 0.0.6
+  subpackages:
+  - choria
+  - server
+  - build
+- package: github.com/choria-io/go-protocol
+  version: ^1.0.0
+  subpackages:
+  - protocol
