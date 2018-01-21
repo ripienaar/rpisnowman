@@ -15,6 +15,8 @@ $ env GOOS=linux GOARCH=amd64 go build -tags default
 
 This will build the standard binary deployable to RPIs.
 
+## Management
+
 There is a [Choria](https://choria.io) based management agent that can be anabled:
 
 ```
@@ -23,6 +25,24 @@ $ env GOOS=linux GOARCH=amd64 go build -tags choria -ldflags "-X main.middleware
 ```
 
 The snowman will now connect to a management network from where you can use Choria to pause and resume it's operation.
+
+You can pause and resume it's operation remotely:
+
+```
+% mco rpc snowman switch --config ~/.mcollective.choriapi -T snowmen
+Discovering hosts using the mc method for 2 second(s) .... 1
+
+ * [ ============================================================> ] 1 / 1
+
+
+raspberrypi
+   message: Flipped the snowman switch
+    paused: true
+
+
+
+Finished processing 1 / 1 hosts in 420.62 ms
+```
 
 ## Contact?
 
