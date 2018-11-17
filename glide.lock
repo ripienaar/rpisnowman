@@ -1,22 +1,25 @@
-hash: 2956b4b5cfaaff640faa497d3a6eea27562499664d78f3726439f81e3d7e31bf
-updated: 2018-01-21T11:18:23.053588+01:00
+hash: 40f16d85dd0374958ba0c3ebce931e36fc3b6afde6db26b8b9d07c51022798bc
+updated: 2018-11-17T15:21:02.565585+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
   subpackages:
   - quantile
-- name: github.com/choria-io/go-choria
-  version: 294656073efe1103bcd8e30d1156347d2177e184
+- name: github.com/choria-io/go-backplane
+  version: 527b7f7e5b64ade8997824f20aeab7fee6c17873
   subpackages:
-  - agents/choriautil
-  - agents/discovery
-  - agents/provision
-  - agents/rpcutil
+  - backplane
+- name: github.com/choria-io/go-choria
+  version: 684d9b00e1b5d35727bc46bffd3913b2ed45b8e6
+  subpackages:
   - backoff
   - build
   - choria
-  - mcorpc
-  - mcorpc/audit
+  - config
+  - plugin
+  - provtarget
+  - provtarget/builddefaults
+  - puppet
   - registration
   - server
   - server/agents
@@ -28,30 +31,78 @@ imports:
   - server/discovery/identity
   - server/registration
   - srvcache
+- name: github.com/choria-io/go-confkey
+  version: 634d2c41860498507b0c7eeb2f8a33b1aa6a809d
+- name: github.com/choria-io/go-lifecycle
+  version: 6433dc8ede9dd3e3170dad048ef897e5088ecc66
 - name: github.com/choria-io/go-protocol
-  version: 72bc3ca9593e692e55a3f5dda61194803f54d619
+  version: c3117476636777d60c00a86b2d4b2b8fc56addb4
   subpackages:
   - protocol
   - protocol/v1
+- name: github.com/choria-io/go-security
+  version: 9c90c6ebc9548a8300fff479716bad9c739d6717
+  subpackages:
+  - filesec
+  - puppetsec
+- name: github.com/choria-io/go-updater
+  version: 8c484a7b2a2a8e4fb51b3db81ff5dad15c512523
+- name: github.com/choria-io/go-validator
+  version: 4ce2ef25983faa873cc4bcea0f1ef2a4273d42cc
+  subpackages:
+  - duration
+  - enum
+  - ipaddress
+  - ipv4
+  - ipv6
+  - maxlength
+  - regex
+  - shellsafe
+- name: github.com/choria-io/mcorpc-agent-provider
+  version: 279845170e27ad55f55a3ced2c442eb91ad5334d
+  subpackages:
+  - mcorpc
+  - mcorpc/audit
+  - mcorpc/ddl/agent
+  - mcorpc/golang
+  - mcorpc/golang/choriautil
+  - mcorpc/golang/discovery
+  - mcorpc/golang/rpcutil
+- name: github.com/choria-io/provisioning-agent
+  version: c5300d23e090eda3904af8edb909f267d17825a0
+  subpackages:
+  - agent
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
+  subpackages:
+  - encoders/builtin
+  - util
+- name: github.com/gofrs/uuid
+  version: 7077aa61129615a0d7f45c49101cd011ab221c27
+- name: github.com/golang/mock
+  version: 8b2eeeb0ca5f56c78bec5efde9c4a21d9201126c
+  subpackages:
+  - gomock
+  - mockgen
 - name: github.com/golang/protobuf
   version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
   subpackages:
   - proto
+- name: github.com/konsorten/go-windows-terminal-sequences
+  version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
 - name: github.com/nats-io/go-nats
-  version: d66cb54e6b7bdd93f0b28afc8450d84c780dfb68
+  version: fb0396ee0bdb8018b0fef30d6d1de798ce99cd05
   subpackages:
   - encoders/builtin
   - util
 - name: github.com/nats-io/nuid
   version: 33c603157d6fd1b0ac2599bcc4a286b36479a06d
 - name: github.com/prometheus/client_golang
-  version: 06bc6e01f4baf4ee783ffcd23abfcb0b0f9dfada
+  version: 967789050ba94deca04a5e84cce8ad472ce313c1
   subpackages:
   - prometheus
 - name: github.com/prometheus/client_model
@@ -68,12 +119,10 @@ imports:
   version: b15cd069a83443be3154b719d0cc9fe8117f09fb
   subpackages:
   - xfs
-- name: github.com/satori/go.uuid
-  version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sirupsen/logrus
-  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
+  version: bcd833dfe83d3cebad139e4a29ed79cb2318bf95
 - name: github.com/stianeikeland/go-rpio
-  version: a6b0dffd47b6b1ddf7f1bfe2144f05bf335e911d
+  version: 019f406b4939d0ac8fb6801637506f0e2fe872d3
 - name: github.com/tidwall/gjson
   version: 5cd723d566400bc7ac450eb0c5b9edbb75a70750
 - name: github.com/tidwall/match
@@ -88,6 +137,10 @@ imports:
   version: a6600008915114d9c087fad9f03d75087b1a74df
   subpackages:
   - ssh/terminal
+- name: golang.org/x/net
+  version: c10e9556a7bc0e7c942242b606f0acf024ad5d6a
+  subpackages:
+  - context
 - name: golang.org/x/sys
   version: 2c42eef0765b9837fbdab12011af7830f55f88f0
   subpackages:
