@@ -10,39 +10,28 @@ You can build your own binary from this code:
 
 ```
 $ glide install
-$ env GOOS=linux GOARCH=amd64 go build -tags default
+env GOOS=linux GOARCH=arm GOARM=5 go build -ldflags '-w -s'
 ```
 
 This will build the standard binary deployable to RPIs.
 
 ## Management
 
-There is a [Choria](https://choria.io) based management agent that can be anabled:
+A backplane is embedded using the [Choria Backplane](https://github.com/choria-io/go-backplane) system, it's setup in insecure mode so can work with any NATS server without TLS enabled like demo.nats.io.
+
+Start the snowman as follows to enable this:
 
 ```
-$ glide install
-$ env GOOS=linux GOARCH=amd64 go build -tags choria -ldflags "-X main.middleware=demo.nats.io:4222"
+SNOWMAN_NAME=bob BACKPLANE_BROKERS=demo.nats.io:4222 ./rpisnowman
 ```
 
-The snowman will now connect to a management network from where you can use Choria to pause and resume it's operation.
-
-You can pause and resume it's operation remotely:
+With the backplane client setup you can run:
 
 ```
-% mco rpc snowman switch --config ~/.mcollective.choriapi -T snowmen
-Discovering hosts using the mc method for 2 second(s) .... 1
-
- * [ ============================================================> ] 1 / 1
-
-
-raspberrypi
-   message: Flipped the snowman switch
-    paused: true
-
-
-
-Finished processing 1 / 1 hosts in 420.62 ms
+$ backplane --insecure bob pause
 ```
+
+To turn the light display off - later issue a `resume` action and it will start again.
 
 ## Contact?
 

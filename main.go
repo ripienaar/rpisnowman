@@ -1,123 +1,111 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"math/rand"
+	"io/ioutil"
 	"os"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"sync"
+	"syscall"
 	"time"
 
-	rpio "github.com/stianeikeland/go-rpio"
+	"github.com/sirupsen/logrus"
 )
 
-var (
-	leds   = [9]rpio.Pin{}
-	pins   = []int{7, 8, 9, 17, 18, 22, 23, 24, 25}
-	paused = false
-	err    error
-)
+var log *logrus.Entry
+var Version = "2.0.0"
+var mu = &sync.Mutex{}
+var wg = &sync.WaitGroup{}
+var loglevel = "info"
 
-func sleep() {
-	time.Sleep(1 * time.Second)
-}
-
-func flip(p ...int) {
-	for _, i := range p {
-		leds[i].Toggle()
-	}
-
-	sleep()
-
-	for _, i := range p {
-		leds[i].Toggle()
-	}
-}
-
-func simpleScheme() {
-	seq := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1, 0}
-	for _, pin := range seq {
-		leds[pin].Toggle()
-		sleep()
-	}
-	allToggle()
-}
-
-func crossScheme() {
-	flip(0, 5)
-	flip(1, 4)
-	flip(2, 3)
-	flip(6, 7)
-	flip(0, 1, 2, 3, 4, 5, 6, 7, 8)
-}
-
-func linesScheme() {
-	flip(0, 1, 2)
-	flip(3, 4, 5)
-	flip(6, 7, 8)
-}
-
-func upScheme() {
-	flip(2, 5)
-	flip(1, 4)
-	flip(0, 3)
-	flip(8)
-	flip(6, 7)
-}
-
-func downScheme() {
-	flip(6, 7)
-	flip(8)
-	flip(0, 3)
-	flip(1, 4)
-	flip(2, 5)
-}
-
-func allScheme() {
-	allToggle()
-	sleep()
-	allToggle()
-}
-
-func allToggle() {
-	for _, led := range leds {
-		led.Toggle()
-	}
-}
-
-func allOff() {
-	for _, led := range leds {
-		led.Low()
-	}
-}
+var ctx context.Context
+var cancel func()
 
 func main() {
-	if err := rpio.Open(); err != nil {
-		fmt.Println(err)
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
+
+	loglevel = os.Getenv("SNOWMAN_LOGLEVEL")
+	if loglevel == "" {
+		loglevel = "info"
+	}
+
+	log = logrus.NewEntry(logrus.New())
+
+	switch loglevel {
+	case "debug":
+		log.Logger.SetLevel(logrus.DebugLevel)
+	case "warn":
+		log.Logger.SetLevel(logrus.WarnLevel)
+	default:
+		loglevel = "info"
+		log.Logger.SetLevel(logrus.InfoLevel)
+	}
+
+	name := os.Getenv("SNOWMAN_NAME")
+	if name == "" {
+		name = "snowman"
+	}
+
+	log.Infof("Ryanteck RTK-000-00A GPIO Snowman '%s' version %s starting", name, Version)
+
+	go interruptWatcher()
+
+	man := NewSnowMan(name, log)
+
+	wg.Add(1)
+	go man.StartBackplane(ctx, wg)
+
+	err := man.Open()
+	if err != nil {
+		fmt.Printf("Could not open rpi: %s", err)
 		os.Exit(1)
 	}
+	defer man.Close()
 
-	defer rpio.Close()
+	wg.Add(1)
+	go man.Run(ctx, wg)
 
-	if enableChoria {
-		go runChoria()
-	}
+	wg.Wait()
+}
 
-	for i, pin := range pins {
-		leds[i] = rpio.Pin(pin)
-		leds[i].Output()
-	}
-
-	schemes := []func(){upScheme, crossScheme, linesScheme, allScheme, downScheme, simpleScheme}
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-
-	allOff()
+func interruptWatcher() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	for {
-		for _, i := range r.Perm(len(schemes)) {
-			if !paused {
-				schemes[i]()
-				allOff()
+		select {
+		case sig := <-sigs:
+			switch sig {
+			case syscall.SIGINT, syscall.SIGTERM:
+				log.Warnf("Shutting down on %s", sig)
+				cancel()
+			case syscall.SIGQUIT:
+				dumpGoRoutines()
 			}
-			sleep()
+		case <-ctx.Done():
+			return
 		}
 	}
+}
+
+func dumpGoRoutines() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	outname := filepath.Join(os.TempDir(), fmt.Sprintf("snowman-threaddump-%d-%d.txt", os.Getpid(), time.Now().UnixNano()))
+
+	buf := make([]byte, 1<<20)
+	stacklen := runtime.Stack(buf, true)
+
+	err := ioutil.WriteFile(outname, buf[:stacklen], 0644)
+	if err != nil {
+		log.Errorf("Could not produce thread dump: %s", err)
+		return
+	}
+
+	log.Warnf("Produced thread dump to %s", outname)
 }
