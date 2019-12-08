@@ -9,7 +9,6 @@ A pre-built binary is in the releases section, download onto your Pi and run it.
 You can build your own binary from this code:
 
 ```
-$ glide install
 env GOOS=linux GOARCH=arm GOARM=5 go build -ldflags '-w -s'
 ```
 
