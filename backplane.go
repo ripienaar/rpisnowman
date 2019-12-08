@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/choria-io/go-backplane/backplane"
-	"github.com/sirupsen/logrus"
 )
 
 // StartBackplane starts the management backplane if brokers are set
@@ -23,7 +22,6 @@ func (s *SnowMan) StartBackplane(ctx context.Context, wg *sync.WaitGroup) {
 	opts := []backplane.Option{
 		backplane.ManageInfoSource(s),
 		backplane.ManagePausable(s),
-		backplane.ManageLogLevel(s),
 	}
 
 	config := &backplane.StandardConfiguration{
@@ -75,33 +73,4 @@ func (s *SnowMan) Flip() {
 // Paused implements backplane.Pausable
 func (s *SnowMan) Paused() bool {
 	return s.paused
-}
-
-// SetLogLevel implements backplane.LogLevelSetable
-func (s *SnowMan) SetLogLevel(level backplane.LogLevel) {
-	switch level {
-	case backplane.InfoLevel:
-		s.log.Logger.SetLevel(logrus.InfoLevel)
-		s.log.Infof("Set log level to info")
-	case backplane.WarnLevel:
-		s.log.Logger.SetLevel(logrus.WarnLevel)
-		s.log.Warnf("Set log level to warn")
-	default:
-		s.log.Logger.SetLevel(logrus.DebugLevel)
-		s.log.Debugf("Set log level to debug")
-	}
-}
-
-// GetLogLevel implements backplane.LogLevelSetable
-func (s *SnowMan) GetLogLevel() backplane.LogLevel {
-	switch s.log.Logger.Level {
-	case logrus.DebugLevel:
-		return backplane.DebugLevel
-	case logrus.InfoLevel:
-		return backplane.InfoLevel
-	case logrus.WarnLevel:
-		return backplane.WarnLevel
-	default:
-		return backplane.CriticalLevel
-	}
 }
